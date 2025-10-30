@@ -1,0 +1,25 @@
+:root {
+  --bg-body: #f6f8fb;
+  --bg-sidebar: #ffffff;
+  --bg-main: #ffffff;
+  --bg-topbar: #ffffff;
+  --bg-active: #e9f0ff;
+
+  --text-dark: #1e293b;
+  --text-muted: #6b7280;
+
+  --primary: #377dff;
+  --accent-yellow: #facc15;
+
+  --border-color: #e5e7eb;
+  --shadow-soft: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--bg-body);
+  color: var(--text-dark);
+  font-family: 'Inter', sans-serif;
+}
