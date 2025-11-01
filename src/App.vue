@@ -1,19 +1,20 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { ref } from 'vue';
 import { RouterView } from 'vue-router';
 import SideBar from './components/SideBar.vue';
 import TopBar from './components/TopBar.vue';
 
-const sidebarOpen = true;
-const isSidebarOpen = computed(() => sidebarOpen)
+const sidebarOpen = ref(true);
+// const isSidebarOpen = computed(() => sidebarOpen)
 
 </script>
 
 <template>
   <div class="app">
-    <TopBar />
+    <TopBar @sidebarOpen="sidebarOpen = !sidebarOpen"/>
     <div class="app-body">
-      <SideBar :isOpen="true"  />
+      <SideBar v-model="sidebarOpen" />
       <main class="app-main">
         <router-view />
       </main>
