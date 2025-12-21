@@ -18,21 +18,25 @@ import RadioButton from '@/components/forms/RadioButton.vue';
 import { memberServices, leaderRolesServices, saintServices, squadServices } from '@/services/apis.service';
 import { useNotify } from "@/services/toast.service";
 import { useActiveSchoolYearStore } from '@/stores/apis';
-import { getRoleImg, processLeaderRole, normalize, getSectorImg } from '@/utils/common';
+import { getRoleImg, processLeaderRole, normalize, getSectorImg, preProcessDateInput } from '@/utils/common';
 import type { TableCol, TableActions, Option } from '@/constants';
 import { TblColType } from '@/constants';
 import { useLoadingStore } from "@/stores/app";
 import MembersTable from './children/MembersTable.vue';
+import { useAuthStore } from '@/stores/auth';
 
 const loading = useLoadingStore();
+const auth = useAuthStore();
 const { notifySuccess, notifyError } = useNotify();
 const confirm = useConfirm();
 const activeYear = useActiveSchoolYearStore();
 // const router = useRouter();
+const isEditor = computed(() => auth.hasRole('editors'));
 
 // data
 const leaderRoles = ref<any[]>([]);
 const members = ref<any[]>([]);
+const totalMembers = ref(0);
 const filteredMembers = ref<any[]>([]);
 const tblLoading = ref(false);
 
@@ -50,26 +54,6 @@ const initialValues = ref({
   mom: '',
   parentPhone: '',
 });
-const preProcessDateInput = (val: any) => {
-  if (val === '' || val === null) {
-    return null;
-  }
-  if (val instanceof Date) {
-    return val;
-  }
-  if (typeof val === 'string') {
-    const [day, month, year] = val.split('/').map(v => Number(v));
-    if (!day || !month || !year || day < 1 || day > 31 || month < 1 || month > 12 || year < 1000 || year > 9999) {
-      return undefined;
-    }
-    const date = new Date(+year, +month - 1, +day);
-    if (isNaN(date.getTime())) {
-      return undefined;
-    }
-    return date;
-  }
-  return undefined;
-}
 const resolver = ref(zodResolver(
   z.object({
     baptismName: z.string().min(1, { message: 'Vui lòng nhập tên thánh.' }),
@@ -121,7 +105,7 @@ const colFilters = ref({
   mom: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
   parentPhone: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
 });
-const actions = ref<TableActions[]>([
+const actions = computed<TableActions[]>(() => isEditor.value ? [
   {
     icon: 'pi pi-trash',
     tooltip: 'Xóa',
@@ -131,7 +115,8 @@ const actions = ref<TableActions[]>([
         deleteMember.bind(null, id, () => members.value.splice(index, 1)));
     }
   }
-]);
+] : []);
+const pagination = ref();
 const leaderRolesLoading = ref(false);
 
 function showConfirm(message: string, onAccept: () => void | Promise<void>) {
@@ -162,8 +147,8 @@ async function addMember(memberData: any) {
 async function getMembers() {
   try {
     tblLoading.value = true;
-    const data = await Promise.all([memberServices.getMembers()]);
-    members.value = data[0].map((member: any) => {
+    const data = await memberServices.getMembers(pagination.value);
+    members.value = data.data.map((member: any) => {
       return {
         id: member.id,
         baptismName: member.baptism_name,
@@ -177,6 +162,7 @@ async function getMembers() {
         parentPhone: member.parent_phone,
       }
     });
+    totalMembers.value = data.pagination.total;
     filteredMembers.value = members.value;
     tblLoading.value = false;
   } catch (err) {
@@ -250,16 +236,15 @@ async function getSaints() {
 }
 
 async function getSquads() {
-  const s = activeYear.id;
   squadsLoading.value = true;
-  if (!activeYear.id) {
+  if (!activeYear.yearInstance) {
     await activeYear.fetch();
-    if (!activeYear.id) {
+    if (!activeYear.yearInstance) {
       squadsLoading.value = false;
       return;
     }
   }
-  const data = await squadServices.getSquads({school_year_id: activeYear.id});
+  const data = await squadServices.getSquads({school_year_id: activeYear.yearInstance.id});
   squads.value = data.map((squad: any) => ({
     id: squad.id,
     name: squad.name,
@@ -332,13 +317,17 @@ const squad = ref();
 const squads = ref<any[]>([]);
 const squadsLoading = ref(false);
 
-onMounted(async () => {
+async function paging(p: {page: number, limit: number}) {
+  pagination.value = p;
   await getMembers();
+}
+
+onMounted(async () => {
 });
 </script>
 
 <template>
-  <Panel title="Thêm đoàn sinh" toggleable collapsed @toggle="onFormPanelToggles">
+  <Panel v-if="isEditor" title="Thêm đoàn sinh" toggleable collapsed @toggle="onFormPanelToggles">
     <Form ref="form" v-slot="$form" :resolver="resolver" :initialValues="initialValues" @submit="onFormSubmit"
       class="flex flex-col justify-between w-full sm:flex-row sm:flex-wrap">
       <div class="flex flex-col w-full sm:flex-row sm:flex-wrap">
@@ -416,8 +405,8 @@ onMounted(async () => {
     </Form>
   </Panel>
   <Panel>
-    <Table name="Danh sách đoàn sinh" :cols="columns" :data="members" :actions :editable=true :colFilters :loading="tblLoading"
-      colToggleable @filter="onFilter" @rowEditSave="onRowEditSave" @refresh="getMembers">
+    <Table name="Danh sách đoàn sinh" :cols="columns" :data="members" :actions :editable=isEditor :colFilters :loading="tblLoading"
+      colToggleable @filter="onFilter" @rowEditSave="onRowEditSave" @refresh="getMembers" :totalRows="totalMembers" @paging="paging">
       <template #leaderRoleRowTpl="{ value, row }">
         <div class="flex items-center gap-2">
           <img :alt="value" :src="getRoleImg(leaderRoles, row.roleId, 'id')" class="w-5 rounded" />

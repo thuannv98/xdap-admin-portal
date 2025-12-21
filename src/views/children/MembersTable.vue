@@ -17,17 +17,19 @@ import DatePicker from '@/components/forms/DatePicker.vue';
 import RadioButton from '@/components/forms/RadioButton.vue';
 import { memberServices, leaderRolesServices, saintServices } from '@/services/apis.service';
 import { useNotify } from "@/services/toast.service";
-import { getRoleImg, processLeaderRole, normalize } from '@/utils/common';
 import type { TableCol, TableActions, Option } from '@/constants';
 import { TblColType } from '@/constants';
 import { useLoadingStore } from "@/stores/app";
+import { useAuthStore } from '@/stores/auth';
 
 const loading = useLoadingStore();
+const auth = useAuthStore();
 const props = defineProps<{
   data: any[],
   loading?: boolean;
 }>();
 const emit = defineEmits(['rowEditSave', 'delete', 'refresh', 'filter']);
+const isEditor = computed(() => auth.hasRole('editors'));
 
 const { notifySuccess, notifyError } = useNotify();
 const confirm = useConfirm();
@@ -60,7 +62,7 @@ const colFilters = ref({
   mom: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
   parentPhone: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
 });
-const actions = ref<TableActions[]>([
+const actions = computed<TableActions[]>(() => isEditor.value ? [
   {
     icon: 'pi pi-trash',
     tooltip: 'Xóa',
@@ -79,7 +81,7 @@ const actions = ref<TableActions[]>([
       //   deleteMember.bind(null, id, () => members.value.splice(index, 1)));
     }
   }
-]);
+] : []);
 
 function showConfirm(message: string, onAccept: () => void | Promise<void>) {
   confirm.require({
@@ -149,7 +151,7 @@ function onRefresh() {
 </script>
 
 <template>
-  <Table name="Danh sách đoàn sinh" :cols :data :actions :editable=true :colFilters :loading="props.loading"
+  <Table name="Danh sách đoàn sinh" :cols :data :actions :editable=isEditor :colFilters :loading="props.loading"
     colToggleable @filter="onFilter" @rowEditSave="onRowEditSave" @refresh="onRefresh">
   </Table>
 </template>

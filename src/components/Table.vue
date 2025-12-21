@@ -15,6 +15,7 @@ import ProgressBar from 'primevue/progressbar';
 
 import type { TableActions, TableCol } from '@/constants';
 import { TblColType } from '@/constants';
+import Paginator, { type PageState } from 'primevue/paginator';
 
 const props = defineProps<{
   name?: string,
@@ -26,8 +27,9 @@ const props = defineProps<{
   colFilters?: any,
   loading?: boolean;
   globalFilterFields?: string[],
+  totalRows?: number,
 }>();
-const emit = defineEmits(['rowEditSave', 'delete', 'refresh', 'filter']);
+const emit = defineEmits(['rowEditSave', 'delete', 'refresh', 'filter', 'paging']);
 const selectedCols = ref<string[]>(props.cols.map(col => col.field));
 const enabledCols = computed(() => props.cols.filter(col => selectedCols.value.includes(col.field) ));
 
@@ -54,10 +56,12 @@ const pt = ref({
   header: { class: '!px-0 !pt-0' },
   column: {
     bodycell: ({ state }: any) => ({
-      style:  state['d_editing']&&'padding-top: 0.75rem; padding-bottom: 0.75rem'
+      style: state['d_editing']&&'padding-top: 0.75rem; padding-bottom: 0.75rem',
+      class: !state['d_editing']&&'body-cell'
     })
   }
 });
+const defaultRowsPerPage = ref(10);
 
 const getCellValue = (data: any, col: TableCol) => {
   if (col.type == TblColType.Select  && col.selectCfg) {
@@ -75,9 +79,13 @@ const getSelectedCellOption = (selectedValue: string | number, selectCfg: any) =
   return options.find((o: any) => o[valueProp] == selectedValue);
 }
 
+function pageChanged(pageState: PageState) {
+  emit('paging', { page: pageState.page + 1, limit: pageState.rows });
+}
+
 
 onMounted(() => {
-
+  emit('paging', { page: 1, limit: defaultRowsPerPage.value });
 });
 </script>
 
@@ -110,9 +118,13 @@ onMounted(() => {
         <ProgressBar mode="indeterminate" style="height: 3px"></ProgressBar>
       </div>
     </template>
+    <template #footer>
+      <Paginator :rows="defaultRowsPerPage" :totalRecords="totalRows || data.length" :rowsPerPageOptions="[1,2,5,10, 20, 50, 100]"
+        @page="pageChanged"></Paginator>
+    </template>
     <template #empty> Không có dữ liệu. </template>
 
-    <Column v-for="col in enabledCols" :field="col.field" :header="col.header" style="min-width: 20%" sortable
+    <Column v-for="col in enabledCols" :field="col.field" :header="col.header" style="min-width: 40%" sortable
       :filterField="col.field" :filterMenuStyle="{ width: '14rem' }" :dataType="col.type == TblColType.Date ? 'date' : undefined"
       :showFilterOperator="false" :showFilterMatchModes="col.type != TblColType.Select">
       <template v-if="col.editable" #editor="{ data, field }">
@@ -130,7 +142,7 @@ onMounted(() => {
           
           <template #value="slotProps">
             <slot :name="col.selectCfg?.valueTemplateName" v-bind="slotProps"
-              :selected="getSelectedCellOption(slotProps.value, col)" />
+              :selected="getSelectedCellOption(slotProps.value, col.selectCfg)" />
           </template>
         </Select>
         <DatePicker v-else-if="col.type == TblColType.Date" v-model="data[field]" dateFormat="dd/mm/yy" showIcon iconDisplay="input"  />
@@ -188,5 +200,9 @@ onMounted(() => {
 }
 ::v-deep(td[data-p-editable-column="true"] .p-datepicker-input) {
   width: 9rem !important;
+}
+::v-deep(td.body-cell > *:only-child) {
+  display: block;
+  padding-block: 0.5rem;
 }
 </style>

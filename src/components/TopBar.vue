@@ -38,6 +38,7 @@ const logout = async () => {
     loading.setLoading(true);
     await authService.logout();
     loading.setLoading(false);
+    auth.loggedOut();
     router.push({ name: 'login' });
   } catch (error) {
     notifyError('Có lỗi xảy ra. Vui lòng thử lại.');
@@ -55,8 +56,7 @@ const logout = async () => {
           @click="$emit('sidebarOpen')" aria-label="Open sidebar" />
         <RouterLink to="/">
           <div class="h-[3.8rem] flex items-center gap-1">
-            <img alt="logo" class="h-[3.8rem] max-w-none" src="@/assets/logo.png"/>
-            <span class="hidden md:inline-block font-bold italic text-zinc-400">Xứ Đoàn<br />Antôn Padova</span>
+            <img alt="logo" class="h-[3.8rem] max-w-none" src="@/assets/imgs/logo.png"/>
           </div>
         </RouterLink>
         <!-- <IconField class="w-full">

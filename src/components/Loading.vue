@@ -54,7 +54,7 @@ const props = defineProps({
   align-items: center;
   background-color: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(1px);
-  z-index: 999;
+  z-index: 9999;
 }
 
 .spinner {

@@ -72,8 +72,11 @@ async function onFormSubmit({ valid, values }: { valid: boolean, values: any }) 
       <div class="w-full md:w-1/2 lg:w-full">
         
       <div class="intro py-[2rem]">
-        <h4 class="welcome mb-1"> Chào mừng đến với <span class="text-capitalize">Xứ đoàn Antôn Padova</span>! 👋🏻 </h4>
-        <p class="mb-0"> Đăng nhập để bắt đầu </p>
+        <div class="flex justify-center">
+          <img alt="logo" class="h-[5rem] mb-[2rem]" src="@/assets/imgs/logo.png" />
+        </div>
+        <h4 class="welcome mb-1 text-gray-900"> Chào mừng đến với<br /><span class="text-capitalize">Xứ đoàn Antôn Padova</span>! 👋🏻 </h4>
+        <p class="mb-0 text-gray-700"> Đăng nhập để bắt đầu </p>
       </div>
         
       <Form ref="form" v-slot="$form" :initialValues :resolver @submit="onFormSubmit"

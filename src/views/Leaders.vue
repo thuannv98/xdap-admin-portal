@@ -22,16 +22,21 @@ import { getRoleImg, normalize, processLeaderRole } from '@/utils/common';
 import type { TableCol, TableActions, Option } from '@/constants';
 import { TblColType } from '@/constants';
 import { useLoadingStore } from "@/stores/app";
+import { useAuthStore } from '@/stores/auth';
 
 const loading = useLoadingStore();
+const auth = useAuthStore();
 const { notifySuccess, notifyError } = useNotify();
 const confirm = useConfirm();
 // const router = useRouter();
+const isEditor = computed(() => auth.hasRole('editors'));
 
 // data
 const leaderRoles = ref<any[]>([]);
 const leaders = ref<any[]>([]);
 const filteredLeaders = ref<any[]>([]);
+const totalLeaders = ref(0);
+const pagination = ref();
 
 // forms
 const form = ref();
@@ -92,7 +97,7 @@ const colFilters = ref({
   email: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
   roleId: { value: null, matchMode: FilterMatchMode.IN },
 });
-const actions = ref<TableActions[]>([
+const actions = computed<TableActions[]>(() => isEditor.value ? [
   {
     icon: 'pi pi-trash',
     tooltip: 'Xóa',
@@ -102,7 +107,7 @@ const actions = ref<TableActions[]>([
         deleteLeader.bind(null, id, () => leaders.value.splice(index, 1)));
     }
   }
-]);
+] : []);
 const genders = ref<Option[]>([
   {label: 'Nam', value: 'M'},
   {label: 'Nữ', value: 'F'},
@@ -147,8 +152,8 @@ async function addLeader(leaderData: any) {
 async function getLeaders() {
   try {
     tblLoading.value = true;
-    const data = await Promise.all([leaderServices.getLeaders(), getLeaderRoles()]);
-    leaders.value = data[0].map((leader: any) => {
+    const data = await Promise.all([leaderServices.getLeaders(pagination.value), getLeaderRoles()]);
+    leaders.value = data[0].data.map((leader: any) => {
       const role = leaderRoles.value.find((r: any) => r.id == leader.role_id);
       return {
         id: leader.id,
@@ -162,6 +167,7 @@ async function getLeaders() {
         roleImg: getRoleImg(leaderRoles.value, role?.name),
       }
     });
+    totalLeaders.value = data[0].pagination.total;
     filteredLeaders.value = leaders.value;
     tblLoading.value = false;
   } catch (err) {
@@ -207,7 +213,7 @@ async function onRowEditSave({ newData, index, field }: { newData: any, index: n
     filteredLeaders.value[index] = newData;
     loading.setLoading(false);
   } catch (err: any) {
-    notifyError('Cập nhật không thành công: ' + err.response?.data?.error?.message || err.message);
+    notifyError('Cập nhật không thành công: ' + err.message);
     loading.setLoading(false);
   }
 }
@@ -218,7 +224,7 @@ async function getLeaderRoles() {
     const data = await leaderRolesServices.getLeaderRoles();
     leaderRoles.value = data.map((r: any) => ({
       ...r,
-      roleImg: getRoleImg(leaderRoles.value, r.name),
+      roleImg: getRoleImg(data, r.name),
     }));
     // leaderRoles.value[1].selected = true;/////////////////////////////////////////
     leaderRolesLoading.value = false;
@@ -279,9 +285,13 @@ async function onFormSubmit({ valid, values }: { valid: boolean, values: any }) 
   }
 };
 
+async function paging(p: {page: number, limit: number}) {
+  pagination.value = p;
+  await getLeaders();
+}
+
 
 onMounted(async () => {
-  await getLeaders();
 });
 
 const onAdvancedUpload = ({ xhr: xmlHttpRequest }: FileUploadUploadEvent) => {
@@ -293,11 +303,11 @@ const onAdvancedUpload = ({ xhr: xmlHttpRequest }: FileUploadUploadEvent) => {
   }
 
 };
-
+const s = ref({})
 </script>
 
 <template>
-  <Panel title="Thêm huynh trưởng" toggleable collapsed @toggle="onFormPanelToggles">
+  <Panel v-if="isEditor" title="Thêm huynh trưởng" toggleable collapsed @toggle="onFormPanelToggles">
     <!-- <div class="flex flex-col w-full sm:flex-row sm:flex-wrap"> -->
     <Form ref="form" v-slot="$form" :resolver="resolver" :initialValues="initialValues" @submit="onFormSubmit"
       class="flex flex-col w-full sm:flex-row sm:flex-wrap">
@@ -372,9 +382,9 @@ const onAdvancedUpload = ({ xhr: xmlHttpRequest }: FileUploadUploadEvent) => {
     </div> -->
   </Panel>
   <Panel>
-    <Table name="Danh sách huynh trưởng" :cols="columns" :data="leaders" :actions="actions" :editable=true
+    <Table name="Danh sách huynh trưởng" :cols="columns" :data="leaders" :actions="actions" :editable=isEditor
       :colFilters :loading="tblLoading" colToggleable @filter="onFilter"
-      @rowEditSave="onRowEditSave" @refresh="getLeaders">
+      @rowEditSave="onRowEditSave" @refresh="getLeaders" :totalRows="totalLeaders" @paging="paging">
       <template #leaderRoleRowTpl="{ value, row }">
         <div class="flex items-center gap-2">
           <img :alt="value" :src="getRoleImg(leaderRoles, row.roleId, 'id')" class="w-5 rounded" />
@@ -389,7 +399,7 @@ const onAdvancedUpload = ({ xhr: xmlHttpRequest }: FileUploadUploadEvent) => {
       </template>
       <template #leaderRoleValueTpl="{ selected, value, placeholder }: any">
         <div v-if="value" class="flex items-center">
-          <img :alt="value.label" :src="selected?.roleImg"
+          <img :alt="value.label" :src="selected.roleImg"
             :class="`mr-2`" style="width: 18px" />
           <div>{{ selected?.longName }}</div>
         </div>

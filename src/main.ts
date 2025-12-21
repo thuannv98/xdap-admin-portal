@@ -13,6 +13,8 @@ import ConfirmationService from 'primevue/confirmationservice';
 
 import VueDnDKitPlugin, { type IPluginOptions } from '@vue-dnd-kit/core';
 
+import { setupCalendar } from 'v-calendar';
+
 import '@/assets/theme.css';
 
 const app = createApp(App)
@@ -80,6 +82,12 @@ app.use(VueDnDKitPlugin, {
     },
   },
 } as IPluginOptions);
+
+import VCalendar from 'v-calendar';
+import 'v-calendar/style.css';
+
+// Use plugin with optional defaults
+app.use(VCalendar, {})
 
 
 app.mount('#app')

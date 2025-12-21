@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, defineEmits, defineOptions, useId, computed } from 'vue';
+import { useId, computed } from 'vue';
 
 import FloatLabel from 'primevue/floatlabel';
 import DatePicker from 'primevue/datepicker';

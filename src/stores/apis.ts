@@ -3,15 +3,14 @@ import { defineStore } from 'pinia';
 import { leaderRolesServices, schoolYearServices } from '@/services/apis.service';
 
 export const useActiveSchoolYearStore = defineStore('activeYear', {
-  state: () => ({ id: null, name: '' }),
+  state: (): {yearInstance: any} => ({ yearInstance: null }),
   actions: {
-    async fetch() {
-      // fetch and set active school year
-      const data = await schoolYearServices.getSchoolYears();
+    async fetch(schoolYears?: any[]) {
+      // fetch school years list or use provided data to set active school year
+      const data = schoolYears || await schoolYearServices.getSchoolYears();
       const active = data.find((s: any) => s.is_active);
       if (active) {
-        this.id = active.id;
-        this.name = active.name;;
+        this.yearInstance = active;
       }
     }
   },

@@ -25,14 +25,17 @@ import { getRoleImg, getShortName } from '@/utils/common';
 import type { TableCol, TableActions } from '@/constants';
 import { DB_CODES, type SquadLeaderAssignment, TblColType } from '@/constants';
 import { useLoadingStore } from "@/stores/app";
+import { useAuthStore } from '@/stores/auth';
 
 const loading = useLoadingStore();
+const auth = useAuthStore();
 const { notifySuccess, notifyError, notifyInfo } = useNotify();
 const confirm = useConfirm();
 const router = useRouter();
 function openAssignment() {
   router.push({ path: '/chi-doan/phan-nhiem'});
 }
+const isEditor = computed(() => auth.hasRole('editors'));
 
 
 // data
@@ -56,7 +59,7 @@ const colFilters = ref({
   president: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
   vicePresidents: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
 });
-const actions = ref<TableActions[]>([
+const actions = computed<TableActions[]>(() => isEditor.value ? [
   {
     icon: 'pi pi-trash',
     tooltip: 'Xóa',
@@ -66,7 +69,7 @@ const actions = ref<TableActions[]>([
         deleteSquad.bind(null, id, () => squads.value.splice(index, 1)));
     }
   }
-]);
+] : []);
 const roleIds = ref<{president: number, vice: number}>();
 const sectorImgs = ref(['chien', 'au', 'thieu', 'nghia', 'hiep']);
 const sYearTbl = ref();
@@ -332,7 +335,6 @@ async function getSchoolYears() {
     activeYear.value = active;
     schoolYearsLoading.value = false;
   } catch (err) {
-    console.error('Fetch failed:', err)
     schoolYearsLoading.value = false;
   }
 }
@@ -349,7 +351,6 @@ async function getSectors() {
     }));
     sectorsLoading.value = false;
   } catch (err) {
-    console.error('Fetch failed:', err)
     sectorsLoading.value = false;
   }
 }
@@ -360,7 +361,7 @@ async function getLeaders() {
     const [leaders, roles] = await Promise.all([leaderServices.getLeaders(), leaderRolesServices.getLeaderRoles()]);
     assignmentOptions.value.pLeaders = [];
     assignmentOptions.value.vLeaders = [];
-    leaders.forEach((leader: any, index: number) => {
+    leaders.data.forEach((leader: any, index: number) => {
       const role = roles.find((r: any) => r.id == leader.role_id);
       const option = {
         index,
@@ -497,11 +498,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <Panel title="Thêm chi đoàn mới" toggleable @toggle="onFormPanelToggle" v-model:collapsed="isCollapsed"
+  <Panel v-if="isEditor" title="Thêm chi đoàn mới" toggleable @toggle="onFormPanelToggle" v-model:collapsed="isCollapsed"
     :pt="{
-      // header: {class: '!justify-normal'},
       title: {class: {'w-1/2': !isCollapsed, 'w-auto': isCollapsed}},
-      // headerActions: {class: 'w-1/2 flex justify-between items-center'}
     }">
     <template #togglebutton>
       <Button severity="secondary" label="Xoá" />
@@ -516,10 +515,6 @@ onMounted(async () => {
             <i class="pi pi-circle-fill"></i>
           </span>
         </span>
-        <!-- <span :class="['transition-all', {'w-1/5': !isCollapsed, 'w-[1rem]': isCollapsed}]"
-          :style="{transitionDuration: isCollapsed ? '500ms' : '100ms'}"> -->
-          
-        <!-- </span> -->
         <span class="font-bold transition-all hidden xl:flex gap-5 items-center" :class="[{'w-1/2': !isCollapsed, 'w-[13rem]': isCollapsed}]"
           :style="{transitionDuration: isCollapsed ? '500ms' : '1000ms'}">Phân nhiệm
           <Button icon="pi pi-window-maximize" rounded variant="outlined" @click="openAssignment()"
@@ -583,7 +578,6 @@ onMounted(async () => {
         @submit="onFormSubmitAssignment"
         class="w-full sm:flex-row sm:flex-wrap xl:w-1/2 xl:pl-[0.5rem] xl:ml-[0.5rem]">
 
-      <!-- <div class="w-full xl:w-1/2 p-[5px]"> -->
         <div class="w-full flex justify-between items-center">
           <div class="w-full flex flex-row">
             <div class="p-[5px] rounded-xl w-1/2 lg:w-1/3 xl:w-1/2">
@@ -596,8 +590,6 @@ onMounted(async () => {
                 :disabled="schoolYearsLoading" @change="squadChanged"></Select>
             </div>
           </div>
-          <!-- <Button icon="pi pi-window-maximize" severity="secondary" rounded variant="outlined" @click="openAssignment()"
-            aria-label="Chế độ kéo" v-tooltip="'Chế độ kéo'" class="!hidden xl:!inline-block" /> -->
         </div>
         <div class="flex flex-col sm:flex-row sm:flex-wrap">
           <div class="p-[5px] rounded-xl sm:w-1/2 lg:w-1/3 xl:w-1/2">
@@ -616,12 +608,11 @@ onMounted(async () => {
             <Button :disabled="!$form.valid" type="submit" severity="primary" label="Lưu" variant="outlined" />
           </div>
         </div>
-      <!-- </div> -->
       </Form>
     </div>
   </Panel>
   <Panel title="Danh sách chi đoàn">
-    <Table :cols="columns" :data="squads" :actions="actions" :editable=true
+    <Table :cols="columns" :data="squads" :actions="actions" :editable=isEditor
       :colFilters :loading="tblLoading" :colToggleable="true"
       @rowEditSave="onRowEditSave" @refresh="getSquads(sYearTbl)">
       <template #headerTools>

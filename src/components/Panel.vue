@@ -1,16 +1,30 @@
 <script setup lang="ts">
 import Panel from 'primevue/panel';
+import { computed } from 'vue';
 
 const props = defineProps<{
   title?: string,
   toggleable?: boolean,
   collapsed?: boolean,
+  headless?: boolean,
+  noPad?: boolean,
 }>();
+
+const pt = computed(() => {
+  const pt: any = {};
+  if (props.headless) {
+    pt.header = { class: '!hidden' };
+  }
+  if (props.noPad) {
+    pt.content = {class: '!p-0'};
+  }
+  return pt;
+});
 </script>
 
 <template>
   <div class="panel">
-    <Panel :toggleable :header="props.title" :collapsed v-bind="$attrs">
+    <Panel :toggleable :header="props.title" :collapsed :pt v-bind="$attrs">
       <!-- <div v-if="props.title" class="text-base font-bold pb-4">{{ props.title }}</div> -->
       <template #header>
         <slot name="header" />

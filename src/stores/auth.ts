@@ -24,5 +24,15 @@ export const useAuthStore = defineStore('auth', {
         this.user = null
       }
     },
+
+    loggedOut() {
+      this.user = null;
+      this.loaded = false;
+    },
+
+    hasRole(roleName: string) {
+      const userRoles: any[] = this.user?.roles || [];
+      return userRoles.some((role: any) => role.role_name === roleName);
+    }
   }
 })
