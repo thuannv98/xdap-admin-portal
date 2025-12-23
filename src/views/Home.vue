@@ -429,8 +429,8 @@ onMounted(async () => {
         <div class="w-full col-span-2 sm:col-span-1">
           <Panel>
             <template #header>
-              <div class="w-full flex justify-between">
-                <div class="flex w-full justify-between items-center flex-col md:flex-row">
+              <div class="w-full flex justify-between items-center">
+                <div class="flex justify-between items-center flex-col md:flex-row">
                   <span class="font-bold">Năm học hiện tại</span>
                 </div>
                 <Button v-if="isEditor" icon="pi pi-pencil" variant="text" rounded @click="toggleOp"
@@ -449,9 +449,9 @@ onMounted(async () => {
               </div>
             </template>
               <div class="text-center flex-1 pb-2">
-                <span class="font-bold text-2xl text-(--p-button-text-primary-color)" style="font-family: 'Museo Moderno', cursive">{{ activeYearStore.yearInstance?.name || '-' }}</span>
+                <span class="font-bold text-2xl text-(--p-button-text-primary-color) italic" style="font-family: 'emoji'">{{ activeYearStore.yearInstance?.name || '-' }}</span>
               </div>
-              <div v-if="activeYearStore.yearInstance" class="text-center text-sm italic font-medium text-gray-400 dark:text-gray-400 leading-2">
+              <div v-if="activeYearStore.yearInstance" class="text-center text-sm font-medium text-gray-400 dark:text-gray-400 leading-2">
                 {{ `Từ ${displayDate(activeYearStore.yearInstance.start_date) || '_'}` }}
                 {{ `Đến ${displayDate(activeYearStore.yearInstance.end_date) || '_'}` }}
               </div>

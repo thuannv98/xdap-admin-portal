@@ -1,6 +1,17 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
+
 import Button from "primevue/button";
+
+const route = useRoute();
+
+watch(
+  () => route.fullPath,
+  () => {
+    isOpen.value = false;
+  }
+);
 
 const maximum = ref(true);
 const isOpen = defineModel({ default: true });
@@ -48,10 +59,11 @@ const getCustomIcon = (fileName: string) => new URL(`../assets/icons/${fileName}
         @click="maximum=!maximum" severity="info" rounded size="small" variant="outlined" aria-label="Toggle sidebar" />
     </div>
     <nav class="mt-4 space-y-2">
-      <RouterLink v-for="item in menu" :to="item.route" :key="item.route" v-tooltip="item.label"
-        :class="['sidebar-item', { active: item.route === $route.path || item.route !== '/' && $route.path.startsWith(item.route) }]">
-        <i :class="item.icon" />
-        <label :class="{ collapsed: !maximum }">{{item.label}}</label>
+      <RouterLink v-for="item in menu" :to="item.route" :key="item.route">
+        <div v-tooltip="item.label" :class="['sidebar-item', { active: item.route === $route.path || item.route !== '/' && $route.path.startsWith(item.route) }]">
+          <i :class="item.icon" />
+          <label :class="{ collapsed: !maximum }">{{item.label}}</label>
+        </div>
       </RouterLink>
     </nav>
     </div>

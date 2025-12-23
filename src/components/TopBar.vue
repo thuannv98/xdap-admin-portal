@@ -7,7 +7,7 @@ import Button from "primevue/button";
 import Avatar from 'primevue/avatar';
 import OverlayBadge from 'primevue/overlaybadge';
 import { useAuthStore } from '@/stores/auth';
-import { getFirstLettersOfWords, getLeaderAvatar, getRole, processLeaderRole } from '@/utils/common';
+import { getFirstLettersOfWords, getLeaderAvatar, getRole, processLeaderRole, retrieveEmailAccount } from '@/utils/common';
 import { useLeaderRolesStore } from '@/stores/apis';
 import { useLoadingStore } from '@/stores/app';
 import { authService } from '@/services/apis.service';
@@ -52,7 +52,7 @@ const logout = async () => {
     <div class="h-[3.8rem] flex justify-between items-center px-3">
       <div class="left flex">
         <Button class="sidebar-toggle md:!hidden" icon="pi pi-bars"
-          severity="info" size="small" variant="text" rounded
+          severity="info" variant="text" rounded
           @click="$emit('sidebarOpen')" aria-label="Open sidebar" />
         <RouterLink to="/">
           <div class="h-[3.8rem] flex items-center gap-1">
@@ -71,8 +71,8 @@ const logout = async () => {
           <Button icon="pi pi-bell" variant="text" rounded aria-label="Filter" size="large" />
         </OverlayBadge>
         <div class="account flex gap-2 items-center cursor-pointer" @click="toggle">
-          <div class="info">
-            <div class="account-name">{{ auth.user?.leader_details?.last_name || auth.user?.email }}</div>
+          <div class="info hidden md:block">
+            <div class="account-name">{{ auth.user?.leader_details?.last_name || retrieveEmailAccount(auth.user?.email) }}</div>
             <div class="role text-xs text-[#6b7280]">{{ getUserRole() }}</div>
           </div>
           <Avatar :image="getLeaderAvatar(auth.user?.leader_details)" shape="circle" />
