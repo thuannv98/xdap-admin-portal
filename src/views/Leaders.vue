@@ -16,13 +16,14 @@ import Input from '@/components/forms/Input.vue';
 import Select from '@/components/forms/Select.vue';
 import DatePicker from '@/components/forms/DatePicker.vue';
 import RadioButton from '@/components/forms/RadioButton.vue';
-import { leaderServices, leaderRolesServices, saintServices } from '@/services/apis.service';
+import { leaderServices, leaderRolesServices, saintServices, authService } from '@/services/apis.service';
 import { useNotify } from "@/services/toast.service";
 import { getRoleImg, normalize, processLeaderRole } from '@/utils/common';
 import type { TableCol, TableActions, Option } from '@/constants';
 import { TblColType } from '@/constants';
 import { useLoadingStore } from "@/stores/app";
 import { useAuthStore } from '@/stores/auth';
+import Checkbox from 'primevue/checkbox';
 
 const loading = useLoadingStore();
 const auth = useAuthStore();
@@ -49,6 +50,7 @@ const initialValues = ref({
   phone: '',
   email: '',
   roleId: '',
+  shouldCreateAccount: false,
 });
 const resolver = ref(zodResolver(
   z.object({
@@ -67,6 +69,15 @@ const resolver = ref(zodResolver(
       z.string().min(1, 'Vui lòng chọn cấp hiệu.'),
       z.number().min(1, 'Vui lòng chọn cấp hiệu.')
     ]),
+    shouldCreateAccount: z.boolean('Giá trị không hợp lệ.')
+  }).superRefine((data, ctx) => {
+    if (data.shouldCreateAccount && !data.email) {
+      ctx.addIssue({
+        path: ['email'],
+        message: 'Yêu cầu email khi tạo tài khoản',
+        code: 'custom'
+      })
+    }
   })
 ));
 const filePath = ref('');
@@ -138,14 +149,15 @@ const getSelectedRole = (roleId: number) => (leaderRoles.value || []).find((s: a
 async function addLeader(leaderData: any) {
   try {
     loading.setLoading(true);
-    await leaderServices.addLeader(leaderData);
+    const newLeader = await leaderServices.addLeader(leaderData);
     notifySuccess('Đã thêm Trưởng mới.');
-    form.value?.reset();
     await getLeaders();
     loading.setLoading(false);
+    return newLeader;
   } catch (err) {
     notifyError('Thêm không thành công: ' + err);
     loading.setLoading(false);
+    throw err;
   }
 }
 
@@ -186,6 +198,19 @@ async function deleteLeader(leaderId: number, cb?: () => void) {
   } catch (err) {
     notifyError('Xoá không thành công: ' + err);
     loading.setLoading(false);
+  }
+}
+
+async function createUser(email: string, leaderId: string) {
+  try {
+    loading.setLoading(true);
+    await authService.createUser({ email, leader_id: leaderId });
+    notifySuccess('Đã tạo tài khoản. Xem chi tiết đăng nhập trong email.');
+    loading.setLoading(false);
+  } catch (err) {
+    notifyError('Tạo tài khoản không thành công: ' + err);
+    loading.setLoading(false);
+    throw err;
   }
 }
 
@@ -270,18 +295,26 @@ function onFilter(event: any) {
 
 async function onFormSubmit({ valid, values }: { valid: boolean, values: any }) {
   if (valid) {
-    const data = {
-      baptism_name: values.baptismName,
-      first_name: values.firstName,
-      last_name: values.lastName,
-      dob: values.dob,
-      gender: values.gender,
-      phone: values.phone,
-      email: values.email,
-      role_id: values.roleId,
-      avatar: filePath.value || null
-    }
-    await addLeader(data);
+    // try {
+      const data = {
+        baptism_name: values.baptismName,
+        first_name: values.firstName,
+        last_name: values.lastName,
+        dob: values.dob,
+        gender: values.gender,
+        phone: values.phone,
+        email: values.email,
+        role_id: values.roleId,
+        avatar: filePath.value || null
+      };
+      const newLeader = await addLeader(data);
+      if (values.shouldCreateAccount) {
+        await createUser(values.email, newLeader.id);
+      }
+      form.value?.reset();
+    // } finally {
+
+    // }
   }
 };
 
@@ -332,14 +365,9 @@ const s = ref({})
         <RadioButton name="gender" :options="genders"
           :validation=true :invalid="$form.gender?.invalid" :errMsg="$form.gender?.error?.message" />
       </div>
-      <div class="basis-full h-0 hidden lg:block"></div>
-      <div class="p-[5px] w-full rounded-xl sm:w-1/2 lg:w-1/3">
-        <Input name="phone" type="text" label="Số điện thoại" fluid
-          :validation=true :invalid="$form.phone?.invalid" :errMsg="$form.phone?.error?.message" />
-      </div>
-      <div class="p-[5px] w-full rounded-xl sm:w-1/2 lg:w-1/3">
-        <Input name="email" type="text" label="Email" fluid
-          :validation=true :invalid="$form.email?.invalid" :errMsg="$form.email?.error?.message" />
+      <div class="p-[5px] w-full rounded-xl sm:w-1/2 lg:w-1/3 flex items-center gap-2">
+        <Checkbox name="shouldCreateAccount" inputId="shouldCreateAccount"  binary />
+        <label for="shouldCreateAccount">Tạo tài khoản đăng nhập</label>
       </div>
       <div class="p-[5px] w-full rounded-xl sm:w-1/2 lg:w-1/3">
         <Select name="roleId" :options="leaderRoles" label="Cấp hiệu" class="w-full md:w-56"
@@ -364,6 +392,15 @@ const s = ref({})
           </template>
         </Select>
       </div>
+      <div class="p-[5px] w-full rounded-xl sm:w-1/2 lg:w-1/3">
+        <Input name="phone" type="text" label="Số điện thoại" fluid
+          :validation=true :invalid="$form.phone?.invalid" :errMsg="$form.phone?.error?.message" />
+      </div>
+      <div class="p-[5px] w-full rounded-xl sm:w-1/2 lg:w-1/3">
+        <Input name="email" type="text" label="Email" fluid
+          :validation=true :invalid="$form.email?.invalid" :errMsg="$form.email?.error?.message" />
+      </div>
+      <div class="basis-full h-0 hidden sm:block"></div>
       <div class="p-[5px] w-full rounded-xl sm:w-1/2 lg:w-1/3">
         <FileUpload name="file" url="/api/v1/upload" @upload="onAdvancedUpload($event)" :multiple="false" :showCancelButton="false" accept="image/*" :maxFileSize="1000000">
             <template #empty>

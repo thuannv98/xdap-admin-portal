@@ -95,23 +95,24 @@ onMounted(() => {
     v-model:filters="filters" filterDisplay="menu" :globalFilterFields @filter="onFilter"
     :pt="pt">
     <template #header class="relative">
-      <div class="flex flex-col md:flex-row md:flex-wrap justify-between gap-y-2">
+      <div class="flex flex-col md:flex-row sm:flex-wrap justify-between">
         <span v-if="props.name" class="text-l font-bold">{{props.name}}</span>
         <div class="grow flex flex-row justify-end flex-wrap gap-2">
           <Button icon="pi pi-refresh" rounded variant="outlined" @click="emit('refresh')" v-tooltip="'Làm mới'" class="col-span-1 !self-center !justify-self-end"/>
           <slot name="headerTools" />
-          <div class="w-[calc(50%-0.5rem)] md:w-45 lg:w-60">
+          <div class="w-full sm:w-90 lg:w-120 flex justify-end gap-2">
+          <div class="w-1/2 sm:w-45 lg:w-60">
             <MultiSelect v-if="colToggleable" v-model="selectedCols" :options="cols" optionLabel="header" optionValue="field"
               :maxSelectedLabels="3" display="chip" placeholder="Chọn các cột" class="w-full" />
           </div>
-          <div class="w-[calc(50%-0.5rem)] md:w-45 lg:w-60">
+          <div class="w-1/2 sm:w-45 lg:w-60">
             <IconField class="w-full">
               <InputIcon>
                 <i class="pi pi-search" />
               </InputIcon>
               <InputText v-model="filters['global'].value" placeholder="Tìm kiếm" class="w-full"/>
             </IconField>
-          </div>
+          </div></div>
         </div>
       </div>
       <div v-if="loading" class="absolute bottom-0 left-0 w-full">

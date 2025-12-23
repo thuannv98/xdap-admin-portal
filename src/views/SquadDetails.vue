@@ -102,17 +102,21 @@ async function getMembers() {
 }
 
 function generateOrgChart() {
+  if (!squad.value.squad_president && !squad.value.vice_squad_presidents?.length) {
+    orgChartData.value = null;
+    return;
+  }
   const squadPresident = squad.value.squad_president;
   const presidentLeaf = {
     key: `0`,
     type: 'person',
-    data: {
+    data: squadPresident ? {
       image: getLeaderAvatar(squadPresident),
       name: getLeaderFullName(squadPresident),
       title: 'Chi Đoàn Trưởng',
       phone: squadPresident.phone,
       role: leaderRoles.value.find((r: any) => r.id == squadPresident.role_id)
-    }
+    } : null
   };
   const vicesLeaf = squad.value.vice_squad_presidents.map((vice: any, index: number) => {
     const role = leaderRoles.value.find((r: any) => r.id == vice.role_id);
@@ -154,11 +158,11 @@ onMounted(async () => {
 <template>
   <Panel>
     <header class="flex justify-between items-center gap-4 mb-4">
-      <div class="flex flex-col">
+      <div class="flex flex-col gap-2">
         <h1 class="leading-none font-semibold">{{ squad.name || 'Chi Đoàn' }}</h1>
-        <div class="text-[#6b7280] text-[0.95rem] mt-[4px] flex items-center gap-2">
+        <div class="text-[#6b7280] text-sm mt-[4px] flex flex-col sm:flex-row gap-1">
           <span>Mã chi đoàn: <strong>{{ squad.id || '-' }}</strong></span>
-          <span class="text-[#cbd5e1]">•</span>
+          <span class="text-[#cbd5e1] px-2 hidden sm:inline">•</span>
           <span>Năm học: <strong>{{ schoolYear?.name || '-' }}</strong></span>
         </div>
       </div>
@@ -211,7 +215,7 @@ onMounted(async () => {
         <div class="card w-full">
           <h3 class="card-title">Giáo lý viên</h3>
           <div class="flex flex-col gap-3">
-            <div class="flex gap-3 items-center">
+            <div v-if="squad.squad_president" class="flex gap-3 items-center">
               <Avatar :src="getLeaderAvatar(squad.squad_president)" size="xlarge" shape="square" />
               <!-- <img class="w-[5rem] h-[5rem] rounded-2xl object-cover border-2 border-[rgba(99,102,241,0.08)]" src="@/assets/logo.png" alt="president" /> -->
               <div>

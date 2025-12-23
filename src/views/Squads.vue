@@ -423,6 +423,7 @@ async function getLeaderAssignment(yearId: number) {
 }
 
 async function onFormPanelToggle() {
+  console.log('isCollapsed', isCollapsed)
   if (!isCollapsed.value) {
     const apis = []
     if (!roleIds.value) {
@@ -431,6 +432,7 @@ async function onFormPanelToggle() {
     if (!allAssignments.value.length && typeof assignmentYearId.value === 'number') {
       apis.push(getLeaderAssignment(assignmentYearId.value));
     }
+    console.log(assignmentOptions.value.pLeaders.length, assignmentOptions.value.vLeaders.length)
     if (assignmentOptions.value.pLeaders.length === 0 || assignmentOptions.value.vLeaders.length === 0) {
       apis.push(getLeaders());
     }
@@ -616,9 +618,9 @@ onMounted(async () => {
       :colFilters :loading="tblLoading" :colToggleable="true"
       @rowEditSave="onRowEditSave" @refresh="getSquads(sYearTbl)">
       <template #headerTools>
-          <div class="col-span-1 md:w-45 lg:w-60">
-            <Select v-model="sYearTbl" :options="schoolYears" label="Năm học" :loading="schoolYearsLoading" @change="getSquads(sYearTbl)" />
-          </div>
+        <div class="col-span-1 w-1/2-sub-1 sm:!w-45 lg:!w-60">
+          <Select v-model="sYearTbl" :options="schoolYears" label="Năm học" :loading="schoolYearsLoading" @change="getSquads(sYearTbl)" />
+        </div>
       </template>
       <template #sectorRowTpl="{ value, row }">
         <div class="flex items-center gap-2">
@@ -640,5 +642,8 @@ onMounted(async () => {
 .panel-title {
   line-height: 1;
   font-weight: 600;
+}
+.w-1\/2-sub-1 {
+  width: calc(50% - 0.25rem);
 }
 </style>

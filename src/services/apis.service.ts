@@ -189,6 +189,9 @@ export const authService = {
   logout() {
     return apiV1.post(`${this.path}/logout`, {}, { withCredentials: true });
   },
+  createUser(data: any) {
+    return apiV1.post(`${this.path}/create-user`, data, { withCredentials: true });
+  },
   verifySetupToken(token: string) {
     return apiV1.post(`${this.path}/verify-token`, { setupCode: token });
   },

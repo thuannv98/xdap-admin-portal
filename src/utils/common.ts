@@ -1,5 +1,5 @@
 import { roleImgs, sectorImgs } from "@/constants";
-import leaderIcon from '@/assets/imgs/leader.jpeg'
+import leaderIcon from '@/assets/imgs/leader.png'
 import { useLeaderRolesStore } from "@/stores/apis";
 
 export const normalize = (str: string) => str.normalize("NFD") // separate accents
@@ -80,3 +80,5 @@ export const displayDate = (date: string | Date) => {
     return null;
   }
 };
+
+export const retrieveEmailAccount = (email: string) => email?.split('@')[0] || '';
