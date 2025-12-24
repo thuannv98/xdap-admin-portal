@@ -344,9 +344,7 @@ async function getSectors() {
     sectorsLoading.value = true;
     const data = await sectorsServices.getSectors();
     sectors.value = data.map((sector: any) => ({
-      id: sector.id,
-      name: sector.name,
-      shortName: sector.code,
+      ...sector,
       sectorImg: getSectorImg(sector.code),
     }));
     sectorsLoading.value = false;

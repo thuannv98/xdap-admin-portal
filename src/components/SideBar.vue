@@ -9,7 +9,7 @@ const route = useRoute();
 watch(
   () => route.fullPath,
   () => {
-    isOpen.value = false;
+    isOpen.value = mq.matches || false;
   }
 );
 
