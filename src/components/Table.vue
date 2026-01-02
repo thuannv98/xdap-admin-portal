@@ -186,7 +186,7 @@ onMounted(() => {
       bodyStyle="text-align:center">
       <template #body="{data, index}">
         <Button v-for="btn in props.actions" :icon="btn.icon" :label="btn.label" @click="btn.action(data, index)"
-          severity="info" size="small" variant="text" rounded v-tooltip="btn.tooltip"/>
+          severity="info" variant="text" rounded v-tooltip="btn.tooltip"/>
       </template>
     </Column>
     <Column v-if="editable" :rowEditor="true" :style="{ 'padding-left': editingRows ? '0' : null }"

@@ -19,7 +19,7 @@ function showMemberDetails(node: OrganizationChartNode) {
 </script>
 
 <template>
-  <div v-if="data" class="overflow-x-auto flex flex-row">
+  <div v-if="Object.keys(data).length" class="overflow-x-auto flex flex-row">
     <div class="w-full md:w-2/3">
       <OrganizationChart v-model:selectionKeys="selection" :value="data" collapsible selectionMode="single"
         @node-select="showMemberDetails" @node-unselect="memberDetails=null">

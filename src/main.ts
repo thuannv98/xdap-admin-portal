@@ -68,6 +68,9 @@ app.use(PrimeVue, {
 		choose: 'Chọn',
 		upload: 'Tải lên',
 		cancel: 'Huỷ',
+
+		pending: 'Đang chờ',
+		completed: 'Đã hoàn tất',
 	}
 });
 app.directive('tooltip', Tooltip);

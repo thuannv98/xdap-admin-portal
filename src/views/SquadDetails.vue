@@ -25,7 +25,7 @@ import {
 squadLeaderServices
 } from '@/services/apis.service';
 import { useNotify } from "@/services/toast.service";
-import { getLeaderAvatar, getLeaderFullName, processLeaderRole } from '@/utils/common';
+import { getLeaderAvatar, getFullName, processLeaderRole } from '@/utils/common';
 import { useLoadingStore } from "@/stores/app";
 
 const loading = useLoadingStore();
@@ -40,7 +40,7 @@ const squad = ref<any>({});
 const schoolYear = ref<any>({});
 const members = ref<any[]>([]);
 const leaderRoles = ref<any[]>([]);
-const orgChartData = ref<any>();
+const orgChartData = ref<any>({});
 const captains = ref<any[]>([]);
 const parentRepresentatives = ref<any[]>([]);
 
@@ -103,7 +103,7 @@ async function getMembers() {
 
 function generateOrgChart() {
   if (!squad.value.squad_president && !squad.value.vice_squad_presidents?.length) {
-    orgChartData.value = null;
+    orgChartData.value = {};
     return;
   }
   const squadPresident = squad.value.squad_president;
@@ -112,7 +112,7 @@ function generateOrgChart() {
     type: 'person',
     data: squadPresident ? {
       image: getLeaderAvatar(squadPresident),
-      name: getLeaderFullName(squadPresident),
+      name: getFullName(squadPresident),
       title: 'Chi Đoàn Trưởng',
       phone: squadPresident.phone,
       role: leaderRoles.value.find((r: any) => r.id == squadPresident.role_id)
@@ -125,7 +125,7 @@ function generateOrgChart() {
       type: 'person',
       data: {
         image: getLeaderAvatar(vice),
-        name: getLeaderFullName(vice),
+        name: getFullName(vice),
         title: 'Chi Đoàn Phó',
         phone: vice.phone,
         role
@@ -219,7 +219,7 @@ onMounted(async () => {
               <Avatar :src="getLeaderAvatar(squad.squad_president)" size="xlarge" shape="square" />
               <!-- <img class="w-[5rem] h-[5rem] rounded-2xl object-cover border-2 border-[rgba(99,102,241,0.08)]" src="@/assets/logo.png" alt="president" /> -->
               <div>
-                <div class="font-bold text-[#111827]">{{ getLeaderFullName(squad.squad_president) || '-' }}</div>
+                <div class="font-bold text-[#111827]">{{ getFullName(squad.squad_president) || '-' }}</div>
                 <div class="text-[#6b7280] text-[0.9rem]">{{ leaderRoles.find(r => r.id == squad.squad_president?.role_id)?.longName || 'Chi Đoàn Trưởng' }}</div>
                 <div class="text-[#6b7280] text-[0.85rem]">{{ squad.squad_president?.phone || '-' }}</div>
               </div>
@@ -228,7 +228,7 @@ onMounted(async () => {
             <div v-for="(vice, i) in squad.vice_squad_presidents || []" :key="i" class="person">
               <img alt="vice" class="avatar" :src="getLeaderAvatar(vice)"/>
               <div>
-                <div class="name">{{ getLeaderFullName(vice) }}</div>
+                <div class="name">{{ getFullName(vice) }}</div>
                 <div class="role">{{ leaderRoles.find(r => r.id == vice.role_id)?.longName || 'Chi Đoàn Phó' }}</div>
                 <div class="phone">{{ vice?.phone || '-' }}</div>
               </div>
@@ -241,7 +241,7 @@ onMounted(async () => {
           <div v-for="(captain, i) in captains || []" :key="i" class="person">
             <img alt="captain" class="avatar"  src="@/assets/logo.png"/>
             <div>
-              <div class="name">{{ getLeaderFullName(captain) }}</div>
+              <div class="name">{{ getFullName(captain) }}</div>
             </div>
           </div>
         </div>
@@ -251,7 +251,7 @@ onMounted(async () => {
           <div v-for="(rep, i) in parentRepresentatives || []" :key="i" class="person">
             <img class="avatar"  src="@/assets/logo.png"/>
             <div>
-              <div class="name">{{ getLeaderFullName(rep) }}</div>
+              <div class="name">{{ getFullName(rep) }}</div>
               <div class="phone">{{ rep?.phone || '-' }}</div>
             </div>
           </div>

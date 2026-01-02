@@ -7,6 +7,8 @@
 
 // export { VITE_WMS_URL, OA_SIGN_KEY, SESSION_ID_KEY, API_VERSION }
 
+export const serverBaseUrl = import.meta.env.VITE_API_V1_BASE_URL || `/api/v1`;
+
 export const dateFormat = 'dd/mm/yy';
 
 export const sectorImgs = ['chien', 'au', 'thieu', 'nghia', 'hiep'];

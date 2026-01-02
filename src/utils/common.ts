@@ -35,10 +35,10 @@ export function getSectorImg(sectorCode: string) {
   return sector ? new URL(`/src/assets/imgs/${sector}.png`, import.meta.url).href : null;
 };
 
-export const getLeaderFullName = (leader: any) => {
-  if (!leader) return '';
-  return `${leader.baptism_name} ${leader.first_name} ${leader.last_name}`;
-}
+export const getFullName = (person: any) => {
+  if (!person) return '';
+  return `${person.baptism_name || person.baptismName} ${person.first_name || person.firstName} ${person.last_name || person.lastName}`;
+};
 
 export const getLeaderAvatar = (leader: any) => leader?.avatar || leaderIcon;
 

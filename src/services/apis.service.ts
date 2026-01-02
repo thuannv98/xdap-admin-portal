@@ -161,15 +161,25 @@ export const memberServices = {
   addMember(leader: any) {
     return apiV1.post(this.path, leader);
   },
-  updateMember(memberId: number, leader: any) {
+  updateMember(memberId: string, leader: any) {
     return apiV1.patch(`${this.path}/${memberId}`, leader);
   },
-  deleteMember(memberId: number) {
+  deleteMember(memberId: string) {
     return apiV1.delete(`${this.path}/${memberId}`);
   },
   getStats() {
     return apiV1.get(`${this.path}/stats?is_active=true`);
-  }
+  },
+  getMemberSquad(memberId: string, filters?: any) {
+    let query = '';
+    if (filters) {
+      query = `?${Object.entries(filters).map(f => `${f[0]}=${f[1]}`).join('&')}`;
+    }
+    return apiV1.get(`${this.path}/${memberId}/squads${query}`)
+  },
+  removeMemberFromSquad(memberId: string, squadId: number) {
+    return apiV1.delete(`${this.path}/${memberId}/squads/${squadId}`);
+  },
 };
 
 export const assignmentServices = {
