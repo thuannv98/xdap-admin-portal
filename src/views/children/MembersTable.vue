@@ -100,7 +100,7 @@ function showConfirm(message: string, onAccept: () => void | Promise<void>) {
   });
 };
 
-async function deleteMember(memberId: number, cb?: () => void) {
+async function deleteMember(memberId: string, cb?: () => void) {
   try {
     loading.setLoading(true);
     await memberServices.deleteMember(memberId);

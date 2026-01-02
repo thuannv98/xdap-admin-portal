@@ -18,16 +18,16 @@ import DatePicker from '@/components/forms/DatePicker.vue';
 import RadioButton from '@/components/forms/RadioButton.vue';
 import { leaderServices, leaderRolesServices, saintServices, authService } from '@/services/apis.service';
 import { useNotify } from "@/services/toast.service";
-import { getRoleImg, normalize, processLeaderRole } from '@/utils/common';
+import { getFullName, getRoleImg, normalize, processLeaderRole } from '@/utils/common';
 import type { TableCol, TableActions, Option } from '@/constants';
-import { TblColType } from '@/constants';
+import { serverBaseUrl, TblColType } from '@/constants';
 import { useLoadingStore } from "@/stores/app";
 import { useAuthStore } from '@/stores/auth';
 import Checkbox from 'primevue/checkbox';
 
 const loading = useLoadingStore();
 const auth = useAuthStore();
-const { notifySuccess, notifyError } = useNotify();
+const { notifySuccess, notifyError, notifyWarn } = useNotify();
 const confirm = useConfirm();
 // const router = useRouter();
 const isEditor = computed(() => auth.hasRole('editors'));
@@ -81,6 +81,7 @@ const resolver = ref(zodResolver(
   })
 ));
 const filePath = ref('');
+const fileUpload = ref();
 
 // table
 const columns = computed<TableCol[]>(() => [
@@ -113,9 +114,8 @@ const actions = computed<TableActions[]>(() => isEditor.value ? [
     icon: 'pi pi-trash',
     tooltip: 'Xóa',
     action: (leader: any, index: number) => {
-      const {id, firstName} = leader;
-      showConfirm(`Xoá Trưởng ${firstName || ''}`.trim() + '?',
-        deleteLeader.bind(null, id, () => leaders.value.splice(index, 1)));
+      showConfirm(`Xoá Trưởng ${getFullName(leader)}`.trim() + '?',
+        deleteLeader.bind(null, leader.id, () => leaders.value.splice(index, 1)));
     }
   }
 ] : []);
@@ -295,6 +295,10 @@ function onFilter(event: any) {
 
 async function onFormSubmit({ valid, values }: { valid: boolean, values: any }) {
   if (valid) {
+    if (fileUpload.value.uploadedFileCount < fileUpload.value.files.length) {
+      notifyWarn('Ảnh chưa được tải lên. Nhấn nút "Tải lên" để tải');
+      return;
+    }
     // try {
       const data = {
         baptism_name: values.baptismName,
@@ -312,6 +316,8 @@ async function onFormSubmit({ valid, values }: { valid: boolean, values: any }) 
         await createUser(values.email, newLeader.id);
       }
       form.value?.reset();
+      fileUpload.value?.clear();
+      fileUpload.value?.removeUploadedFile();
     // } finally {
 
     // }
@@ -336,7 +342,6 @@ const onAdvancedUpload = ({ xhr: xmlHttpRequest }: FileUploadUploadEvent) => {
   }
 
 };
-const s = ref({})
 </script>
 
 <template>
@@ -402,10 +407,12 @@ const s = ref({})
       </div>
       <div class="basis-full h-0 hidden sm:block"></div>
       <div class="p-[5px] w-full rounded-xl sm:w-1/2 lg:w-1/3">
-        <FileUpload name="file" url="/api/v1/upload" @upload="onAdvancedUpload($event)" :multiple="false" :showCancelButton="false" accept="image/*" :maxFileSize="1000000">
-            <template #empty>
-                <span>Kéo thả ảnh vào đây để tải lên.</span>
-            </template>
+        <FileUpload name="file" :url="`${serverBaseUrl}/upload`" :multiple="false" :fileLimit="1" :showCancelButton="false"
+          accept="image/*" :maxFileSize="1000000" withCredentials ref="fileUpload"
+          @upload="onAdvancedUpload($event)">
+          <template #empty>
+            <span>Kéo thả ảnh vào đây để tải lên.</span>
+          </template>
         </FileUpload>
       </div>
       <div class="p-[5px] w-full sm:w-1/2 lg:w-2/3 flex justify-end gap-2 items-center">

@@ -18,11 +18,10 @@ import RadioButton from '@/components/forms/RadioButton.vue';
 import { memberServices, leaderRolesServices, saintServices, squadServices } from '@/services/apis.service';
 import { useNotify } from "@/services/toast.service";
 import { useActiveSchoolYearStore } from '@/stores/apis';
-import { getRoleImg, processLeaderRole, normalize, getSectorImg, preProcessDateInput } from '@/utils/common';
+import { getRoleImg, normalize, getSectorImg, preProcessDateInput, getFullName } from '@/utils/common';
 import type { TableCol, TableActions, Option } from '@/constants';
 import { TblColType } from '@/constants';
 import { useLoadingStore } from "@/stores/app";
-import MembersTable from './children/MembersTable.vue';
 import { useAuthStore } from '@/stores/auth';
 
 const loading = useLoadingStore();
@@ -53,6 +52,7 @@ const initialValues = ref({
   dad: '',
   mom: '',
   parentPhone: '',
+  squad: '',
 });
 const resolver = ref(zodResolver(
   z.object({
@@ -73,6 +73,7 @@ const resolver = ref(zodResolver(
     dad: z.string().nullable(),
     mom: z.string().nullable(),
     parentPhone: z.string().regex(/^0\d{9}$/, { message: 'Số điện thoại không hợp lệ.' }).or(z.literal("")).optional().nullable(),
+    squad: z.number().nullable(),
   })
 ));
 const genders = ref<Option[]>([
@@ -109,10 +110,25 @@ const actions = computed<TableActions[]>(() => isEditor.value ? [
   {
     icon: 'pi pi-trash',
     tooltip: 'Xóa',
-    action: (member: any, index: number) => {
-      const {id, lastName} = member;
-      showConfirm(`Xoá đoàn sinh ${lastName || ''}`.trim() + '?',
-        deleteMember.bind(null, id, () => members.value.splice(index, 1)));
+    action: async (member: any, index: number) => {
+      const memSquads = await getMemberSquad(member.id);
+      if (!memSquads) {
+        return;
+      }
+      if (memSquads.length === 0) {
+        return showConfirm(
+          `Xoá đoàn sinh ${getFullName(member)}`.trim() + '?',
+          deleteMember.bind(null, member.id, () => members.value.splice(index, 1))
+        );
+      }
+      const squad = memSquads[0].squad_details || {};
+      showConfirm(
+        `Đoàn sinh ${getFullName(member)} đang sinh hoạt tại chi đoàn ${squad.name || ''}. Xác nhận xoá`.trim() + '?',
+        async () => {
+          await removeMemberFromSquad(member.id, squad.id);
+          await deleteMember(member.id, () => members.value.splice(index, 1));
+        }
+      );
     }
   }
 ] : []);
@@ -171,7 +187,7 @@ async function getMembers() {
   }
 }
 
-async function deleteMember(memberId: number, cb?: () => void) {
+async function deleteMember(memberId: string, cb?: () => void) {
   try {
     loading.setLoading(true);
     await memberServices.deleteMember(memberId);
@@ -180,6 +196,32 @@ async function deleteMember(memberId: number, cb?: () => void) {
     typeof cb == 'function' && cb();
   } catch (err) {
     notifyError('Xoá không thành công: ' + err);
+    loading.setLoading(false);
+  }
+}
+
+async function getMemberSquad(memberId: string) {
+  // try {
+    loading.setLoading(true);
+    const memSquads = await memberServices.getMemberSquad(memberId, {
+      school_year_id: activeYear.yearInstance.id,
+      detailsBy: 'squad_id'
+    });
+    loading.setLoading(false);
+    return memSquads;
+  // } catch (err) {
+  //   notifyError('Lỗi tìm nạp dữ liệu: ' + err);
+  //   loading.setLoading(false);
+  // }
+}
+
+async function removeMemberFromSquad(memberId: string, squadId: number) {
+  try {
+    loading.setLoading(true);
+    await memberServices.removeMemberFromSquad(memberId, squadId);
+    loading.setLoading(false);
+  } catch (err) {
+    notifyError('Xoá đoàn sinh khỏi chi đoàn không thành công: ' + err);
     loading.setLoading(false);
   }
 }
@@ -303,9 +345,9 @@ async function onFormSubmit({ valid, values }: { valid: boolean, values: any }) 
     }
     loading.setLoading(true);
     const newMember = await addMember(data);
-    if (squad.value && newMember?.id) {
+    if (values.squad && newMember?.id) {
       await squadServices.addMember({
-        squad_id: squad.value,
+        squad_id: values.squad,
         member_id: newMember.id,
       });
     }
@@ -323,6 +365,9 @@ async function paging(p: {page: number, limit: number}) {
 }
 
 onMounted(async () => {
+  if (!activeYear.yearInstance) {
+    await activeYear.fetch();
+  }
 });
 </script>
 
@@ -377,7 +422,7 @@ onMounted(async () => {
       </div>
       <div class="w-full flex justify-between">
         <div class="p-[5px] w-full rounded-xl sm:w-1/2 lg:w-1/3">
-          <Select v-model="squad" :options="squads" label="Thuộc chi đoàn" class="w-full md:w-56" :loading="squadsLoading">
+          <Select name="squad" :options="squads" label="Thuộc chi đoàn" class="w-full md:w-56" :loading="squadsLoading">
             <template #value="slotProps">
               <div v-if="slotProps.value" class="flex items-center">
                 <img :alt="slotProps.value.label" :src="getSelectedSquad(slotProps.value)?.sectorImg"

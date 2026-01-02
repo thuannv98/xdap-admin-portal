@@ -66,7 +66,10 @@ async function onFormSubmit({ valid, values }: { valid: boolean, values: any }) 
 <template>
   <div class="flex h-full">
     <div class="hidden lg:block lg:w-3/5 xl:w-2/3 overflow-hidden">
-      <img src="@/assets/imgs/brand.jpg" />
+      <picture>
+        <source srcset="@/assets/imgs/brand.png" media="(min-width: 1280px)" />
+        <img src="@/assets/imgs/brand-sm.png" alt="Banner" class="h-full w-auto max-w-fit" />
+      </picture>
     </div>
     <div class="w-full lg:w-2/5 xl:w-1/3 bg-white login-right flex justify-center">
       <div class="w-full md:w-1/2 lg:w-full">

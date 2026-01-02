@@ -421,7 +421,6 @@ async function getLeaderAssignment(yearId: number) {
 }
 
 async function onFormPanelToggle() {
-  console.log('isCollapsed', isCollapsed)
   if (!isCollapsed.value) {
     const apis = []
     if (!roleIds.value) {
@@ -430,7 +429,6 @@ async function onFormPanelToggle() {
     if (!allAssignments.value.length && typeof assignmentYearId.value === 'number') {
       apis.push(getLeaderAssignment(assignmentYearId.value));
     }
-    console.log(assignmentOptions.value.pLeaders.length, assignmentOptions.value.vLeaders.length)
     if (assignmentOptions.value.pLeaders.length === 0 || assignmentOptions.value.vLeaders.length === 0) {
       apis.push(getLeaders());
     }
