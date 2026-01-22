@@ -55,8 +55,12 @@ export const squadServices = {
   updateAssignment(old: SquadLeaderAssignment, new_: SquadLeaderAssignment) {
     return apiV1.patch(`${this.path}/${old.squad_id}/leaders/${old.leader_id}`, new_);
   },
-  getMembers(squadId: number) {
-    return apiV1.get(`${this.path}/${squadId}/members?detailsBy=member_id`);
+  getMembers(squadId: number, filters?: any) {
+    let query = 'detailsBy=member_id';
+    if(filters) {
+      query += `&${Object.entries(filters).map(f => `${f[0]}=${f[1]}`).join('&')}`;
+    }
+    return apiV1.get(`${this.path}/${squadId}/members?${query}`);
   },
   addMember(assignmentInfo: SquadMemberAssignment) {
     return apiV1.post(`${this.path}/${assignmentInfo.squad_id}/members`, assignmentInfo);

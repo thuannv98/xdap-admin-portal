@@ -82,6 +82,9 @@ const genders = ref<Option[]>([
 ]);
 const saints = ref<any[]>([]);
 const filteredSaints = ref<any[]>([]);
+const squads = ref<any[]>([]);
+const squadsLoading = ref(false);
+const squadPagination = ref({page: 1, limit: 1000});
 
 // table
 const columns = computed<TableCol[]>(() => [
@@ -286,8 +289,8 @@ async function getSquads() {
       return;
     }
   }
-  const data = await squadServices.getSquads({school_year_id: activeYear.yearInstance.id});
-  squads.value = data.map((squad: any) => ({
+  const data = await squadServices.getSquads({school_year_id: activeYear.yearInstance.id, ...squadPagination.value});
+  squads.value = data.data.map((squad: any) => ({
     id: squad.id,
     name: squad.name,
     sectorImg: getSectorImg(squad.sector_sname),
@@ -355,9 +358,6 @@ async function onFormSubmit({ valid, values }: { valid: boolean, values: any }) 
     form.value?.reset();
   }
 };
-const squad = ref();
-const squads = ref<any[]>([]);
-const squadsLoading = ref(false);
 
 async function paging(p: {page: number, limit: number}) {
   pagination.value = p;

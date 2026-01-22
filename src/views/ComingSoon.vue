@@ -6,7 +6,7 @@
   <h1 class="text-5xl text-gray-900 font-bold mb-8 animate-pulse">
     Coming Soon
   </h1>
-  <p class="text-gray-700 text-lg mb-8">
+  <p class="text-gray-700 text-lg mb-8 text-center">
     We're working hard to bring you something amazing. Stay tuned!
   </p>
 </div>

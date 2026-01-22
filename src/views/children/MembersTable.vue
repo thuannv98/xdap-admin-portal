@@ -26,17 +26,16 @@ const loading = useLoadingStore();
 const auth = useAuthStore();
 const props = defineProps<{
   data: any[],
+  totalMembers?: number,
   loading?: boolean;
 }>();
-const emit = defineEmits(['rowEditSave', 'delete', 'refresh', 'filter']);
+const emit = defineEmits(['rowEditSave', 'delete', 'refresh', 'filter', 'paging']);
 const isEditor = computed(() => auth.hasRole('editors'));
 
 const { notifySuccess, notifyError } = useNotify();
 const confirm = useConfirm();
-// const router = useRouter();
 
 // data
-const leaderRoles = ref<any[]>([]);
 const members = ref<any[]>([]);
 const filteredMembers = ref<any[]>([]);
 
@@ -148,11 +147,14 @@ function onFilter(event: any) {
 function onRefresh() {
   emit('refresh');
 }
+async function onPaging(p: {page: number, limit: number}) {
+  emit('paging', p);
+}
 </script>
 
 <template>
   <Table name="Danh sách đoàn sinh" :cols :data :actions :editable=isEditor :colFilters :loading="props.loading"
-    colToggleable @filter="onFilter" @rowEditSave="onRowEditSave" @refresh="onRefresh">
+    colToggleable @filter="onFilter" @rowEditSave="onRowEditSave" @refresh="onRefresh" :totalRows="totalMembers" @paging="onPaging">
   </Table>
 </template>
 
