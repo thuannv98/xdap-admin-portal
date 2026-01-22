@@ -71,7 +71,7 @@ async function onFormSubmit({ valid, values }: { valid: boolean, values: any }) 
         <img src="@/assets/imgs/brand-sm.png" alt="Banner" class="h-full w-auto max-w-fit" />
       </picture>
     </div>
-    <div class="w-full lg:w-2/5 xl:w-1/3 bg-white login-right flex justify-center">
+    <div class="w-full lg:w-2/5 xl:w-1/3 bg-white login-right flex justify-center shadow-2xl">
       <div class="w-full md:w-1/2 lg:w-full">
         
       <div class="intro py-[2rem]">

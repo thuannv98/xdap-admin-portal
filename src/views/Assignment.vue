@@ -34,7 +34,7 @@ async function getSquads(schoolYearId: number) {
   try {
     loading.setLoading(true);
     const data = await squadServices.getSquads({include: 'leaders', school_year_id: schoolYearId});
-    squads.value = data.map((squad: any) => ({
+    squads.value = data.data.map((squad: any) => ({
       id: squad.id,
       name: squad.name,
       schoolYearId: squad.school_year_id,

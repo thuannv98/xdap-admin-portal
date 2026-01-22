@@ -26,9 +26,11 @@ import type { TableCol, TableActions } from '@/constants';
 import { DB_CODES, type SquadLeaderAssignment, TblColType } from '@/constants';
 import { useLoadingStore } from "@/stores/app";
 import { useAuthStore } from '@/stores/auth';
+import { useActiveSchoolYearStore } from '@/stores/apis';
 
 const loading = useLoadingStore();
 const auth = useAuthStore();
+const activeYear = useActiveSchoolYearStore();
 const { notifySuccess, notifyError, notifyInfo } = useNotify();
 const confirm = useConfirm();
 const router = useRouter();
@@ -40,9 +42,10 @@ const isEditor = computed(() => auth.hasRole('editors'));
 
 // data
 const schoolYears = ref<any[]>([]);
-const activeYear = ref<number>();
 const sectors = ref<any[]>([]);
 const squads = ref<any[]>([]);
+const totalSquads = ref(0);
+const formSquads = ref<any[]>([]);
 const columns = computed<TableCol[]>(() => [
   { field: 'name', header: 'Tên chi đoàn', editable: true, filterEnabled: true, useLink: true, basePath: '/chi-doan', },
   { field: 'sectorId', header: 'Ngành', filterEnabled: true,
@@ -70,14 +73,15 @@ const actions = computed<TableActions[]>(() => isEditor.value ? [
     }
   }
 ] : []);
+const pagination = ref();
 const roleIds = ref<{president: number, vice: number}>();
 const sectorImgs = ref(['chien', 'au', 'thieu', 'nghia', 'hiep']);
 const sYearTbl = ref();
-watch(activeYear, (newVal) => {
-  sYearTbl.value = newVal;
-  form.value?.setFieldValue('schoolYear', newVal);
-  assignmentYearId.value = newVal;
-});
+const applySchoolYear = (yearId: number) => {
+  sYearTbl.value = yearId;
+  form.value?.setFieldValue('schoolYear', yearId);
+  assignmentYearId.value = yearId;
+};
 // const leaders = computed(getAvailableLeaders);
 
 // forms
@@ -268,14 +272,14 @@ async function createSquad(squadData: any) {
   await squadServices.createSquad(squadData);
   loading.setLoading(false);
   notifySuccess('Chi đoàn mới đã được tạo.');
-  await getSquads(sYearTbl.value);
+  await getSquads();
 }
 
-async function getSquads(yearId: number) {
+async function getSquads() {
   try {
     tblLoading.value = true;
-    const data = await squadServices.getSquads({include: 'leaders', school_year_id: yearId});
-    squads.value = data.map((squad: any) => ({
+    const data = await squadServices.getSquads({include: 'leaders', school_year_id: sYearTbl.value, ...pagination.value});
+    squads.value = data.data.map((squad: any) => ({
       id: squad.id,
       name: squad.name,
       schoolYearId: squad.school_year_id,
@@ -286,10 +290,25 @@ async function getSquads(yearId: number) {
       vicePresidents: (squad.vice_squad_presidents || []).map((v: any) => getShortName(v.first_name, v.last_name)).join(' / '),
       updatedAt: new Date(squad.updated_at).toLocaleString('vi-VN'),
     }));
+    totalSquads.value = data.pagination.total;
     tblLoading.value = false;
   } catch (err) {
     notifyError('Tải dữ liệu không thành công: ' + err)
     tblLoading.value = false;
+  }
+}
+
+async function getFormSquads() {
+  try {
+    const data = await squadServices.getSquads({include: 'leaders', school_year_id: sYearTbl.value, page: 1, limit: 1000});
+    formSquads.value = data.data.map((squad: any) => ({
+      id: squad.id,
+      name: squad.name,
+      president: squad.squad_president && getShortName(squad.squad_president.first_name, squad.squad_president.last_name),
+      vicePresidents: (squad.vice_squad_presidents || []).map((v: any) => getShortName(v.first_name, v.last_name)).join(' / '),
+    }));
+  } catch (err) {
+    notifyError('Tải dữ liệu không thành công: ' + err);
   }
 }
 
@@ -330,9 +349,7 @@ async function getSchoolYears() {
   try {
     schoolYearsLoading.value = true;
     const data = await schoolYearServices.getSchoolYears();
-    const active = data.find((s: any) => s.is_active)?.id;
     schoolYears.value = data;
-    activeYear.value = active;
     schoolYearsLoading.value = false;
   } catch (err) {
     schoolYearsLoading.value = false;
@@ -396,9 +413,9 @@ async function getLeaderAssignment(yearId: number) {
     try {
       squadsLoading.value = true;
       const data = await squadLeaderServices.getAssignment({school_year_id: yearId});
-      allAssignments.value = data;
+      allAssignments.value = data.data;
       const busyLeaders: number[] = [];
-      data.forEach((leader: any) => {
+      data.data.forEach((leader: any) => {
         if (leader.squad_president) {
           const leaderIndex = assignmentOptions.value.pLeaders.findIndex((l: any) => l.id === leader.squad_president.id);
           busyLeaders.push(leaderIndex);
@@ -425,6 +442,9 @@ async function onFormPanelToggle() {
     const apis = []
     if (!roleIds.value) {
       apis.push(getSquadRoles());
+    }
+    if (!formSquads.value.length) {
+      apis.push(getFormSquads());
     }
     if (!allAssignments.value.length && typeof assignmentYearId.value === 'number') {
       apis.push(getLeaderAssignment(assignmentYearId.value));
@@ -482,15 +502,18 @@ function viceChanged(value: number[]) {
   });
 }
 
+async function paging(p: {page: number, limit: number}) {
+  pagination.value = p;
+  if (sYearTbl.value) {
+    await getSquads();
+  }
+}
+
 onMounted(async () => {
-  await Promise.all([
-    getSectors(),
-    getSchoolYears().then(() => {
-      if (typeof activeYear.value === 'number') {
-        return getSquads(activeYear.value)
-      }
-    })
-  ]);
+  await Promise.all([getSectors(), getSchoolYears()]);
+  await activeYear.fetch(schoolYears.value);
+  applySchoolYear(activeYear.yearInstance.id);
+  await getSquads();
 });
 
 </script>
@@ -583,7 +606,7 @@ onMounted(async () => {
                 @change="getLeaderAssignment"></Select>
             </div>
             <div class="p-[5px] rounded-xl w-1/2 lg:w-1/3 xl:w-1/2">
-              <Select name="squad" :options="squads" label="Chi đoàn" :loading="squadsLoading"
+              <Select name="squad" :options="formSquads" label="Chi đoàn" :loading="squadsLoading"
                 :validation=true :invalid="$form.squad?.invalid" :errMsg="$form.squad?.error?.message"
                 :disabled="schoolYearsLoading" @change="squadChanged"></Select>
             </div>
@@ -612,10 +635,10 @@ onMounted(async () => {
   <Panel title="Danh sách chi đoàn">
     <Table :cols="columns" :data="squads" :actions="actions" :editable=isEditor
       :colFilters :loading="tblLoading" :colToggleable="true"
-      @rowEditSave="onRowEditSave" @refresh="getSquads(sYearTbl)">
+      @rowEditSave="onRowEditSave" @refresh="getSquads()" :totalRows="totalSquads" @paging="paging">
       <template #headerTools>
         <div class="col-span-1 w-1/2-sub-1 sm:!w-45 lg:!w-60">
-          <Select v-model="sYearTbl" :options="schoolYears" label="Năm học" :loading="schoolYearsLoading" @change="getSquads(sYearTbl)" />
+          <Select v-model="sYearTbl" :options="schoolYears" label="Năm học" :loading="schoolYearsLoading" @change="getSquads()" />
         </div>
       </template>
       <template #sectorRowTpl="{ value, row }">

@@ -43,6 +43,8 @@ const leaderRoles = ref<any[]>([]);
 const orgChartData = ref<any>({});
 const captains = ref<any[]>([]);
 const parentRepresentatives = ref<any[]>([]);
+const pagination = ref();
+const totalMembers = ref(0);
 
 const tblLoading = ref(false);
 
@@ -79,8 +81,8 @@ async function getLeaderRoles() {
 async function getMembers() {
   try {
     tblLoading.value = true;
-    const data = await squadServices.getMembers(Number(squadId.value));
-    members.value = data.map((assignment: any) => {
+    const data = await squadServices.getMembers(Number(squadId.value), pagination.value);
+    members.value = data.data.map((assignment: any) => {
       const member = assignment.member_details;
       return {
         id: member.id,
@@ -95,10 +97,16 @@ async function getMembers() {
         parentPhone: member.parent_phone,
       }
     });
+    totalMembers.value = data.pagination.total;
     tblLoading.value = false;
   } catch (err) {
     tblLoading.value = false;
   }
+}
+
+async function onMembersPaging(p: {page: number, limit: number}) {
+  pagination.value = p;
+  await getMembers();
 }
 
 function generateOrgChart() {
@@ -260,7 +268,7 @@ onMounted(async () => {
     </section>
 
     <div class="card mt-4">
-      <MembersTable :data="members" :loading="tblLoading" @refresh="getMembers" />
+      <MembersTable :data="members" :loading="tblLoading" :totalMembers @refresh="getMembers" @paging="onMembersPaging" />
     </div>
   </Panel>
 </template>
